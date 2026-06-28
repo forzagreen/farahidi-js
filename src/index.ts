@@ -23,6 +23,9 @@ import type { Analysis, TokenResult } from "./models.js";
 export { Analyzer } from "./analyzer.js";
 export { Disambiguator, tokenize } from "./disambiguate.js";
 export type { Analysis, TokenResult } from "./models.js";
+// Advanced: inject pre-decompressed table text on hosts without `node:fs`
+// (e.g. browsers). See the demo for a fetch + DecompressionStream bootstrap.
+export { provideRawText, hasRawText, layer1DataFiles, layer2DataFiles } from "./lexicon.js";
 export const version = "0.2.0";
 
 let defaultAnalyzer: Analyzer | undefined;

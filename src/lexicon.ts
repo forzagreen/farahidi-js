@@ -75,10 +75,37 @@ const DATA_DIR = fileURLToPath(new URL("./data/", import.meta.url));
 const mapCache = new Map<string, Map<unknown, unknown>>();
 const listCache = new Map<string, unknown[]>();
 
+// Decompressed-text cache keyed by gz filename (with extension). Lets non-Node
+// hosts (e.g. browsers) inject pre-fetched, pre-decompressed table text via
+// provideRawText() so the synchronous loaders below never touch node:fs/zlib.
+const rawTextCache = new Map<string, string>();
+
+/**
+ * Inject already-decompressed text for a bundled gz file (advanced; for
+ * browser/edge data loading). Call this for every table before invoking the
+ * analyzer in an environment without `node:fs` — see {@link layer1DataFiles} /
+ * {@link layer2DataFiles} for the filenames.
+ */
+export function provideRawText(gzFilename: string, text: string): void {
+  rawTextCache.set(gzFilename, text);
+}
+
+/** Whether decompressed text for `gzFilename` has already been injected. */
+export function hasRawText(gzFilename: string): boolean {
+  return rawTextCache.has(gzFilename);
+}
+
+function consumeText(gzFilename: string, encoding: BufferEncoding): string {
+  const provided = rawTextCache.get(gzFilename);
+  if (provided !== undefined) {
+    rawTextCache.delete(gzFilename); // free the (large) string once parsed
+    return provided;
+  }
+  return gunzipSync(readFileSync(DATA_DIR + gzFilename)).toString(encoding);
+}
+
 function readLines(filename: string): string[] {
-  const buf = readFileSync(DATA_DIR + filename + ".jsonl.gz");
-  const text = gunzipSync(buf).toString("utf-8");
-  return text.split("\n");
+  return consumeText(filename + ".jsonl.gz", "utf-8").split("\n");
 }
 
 /**
@@ -87,7 +114,7 @@ function readLines(filename: string): string[] {
  * (the `.lm` is pure ASCII Buckwalter; latin1 is a lossless 1:1 byte mapping).
  */
 export function readGzipText(filenameWithExt: string): string {
-  return gunzipSync(readFileSync(DATA_DIR + filenameWithExt)).toString("latin1");
+  return consumeText(filenameWithExt, "latin1");
 }
 
 /** Load a `*.map` table as a `Map<key, value>` (cached). */
@@ -222,4 +249,29 @@ export class Lexicon {
     const lst = loadList(FEATURE_TABLES[feature].replace("{cat}", cat));
     return index > 0 && index <= lst.length ? lst[index - 1] : null;
   }
+}
+
+const CATEGORIES = ["Verbs", "Nouns"];
+
+/** The gz table filenames Layer-1 (`analyze`) reads — for preloading on hosts
+ * without `node:fs` (e.g. browsers). Derived from the same table registries the
+ * loaders use, so it stays in sync. */
+export function layer1DataFiles(): string[] {
+  const files = new Set<string>();
+  for (const base of Object.values(TABLES)) files.add(base + ".jsonl.gz");
+  for (const cat of CATEGORIES)
+    for (const tpl of Object.values(DERIVED_TABLES)) files.add(tpl.replace("{cat}", cat) + ".jsonl.gz");
+  for (const cat of CATEGORIES)
+    for (const tpl of Object.values(FEATURE_TABLES)) files.add(tpl.replace("{cat}", cat) + ".jsonl.gz");
+  return [...files];
+}
+
+/** The extra gz files Layer-2 (`analyzeText`) reads — the `.lm` + corpus maps. */
+export function layer2DataFiles(): string[] {
+  return [
+    "DATA.MSA-LEMMA.ALL-train.map.jsonl.gz",
+    "DATA.MSA.SHA.STEM.map.jsonl.gz",
+    "DATA.MSA.SHA.ROOT.map.jsonl.gz",
+    "DATA.MSA.ALL.TRAIN.141809.lm.gz",
+  ];
 }

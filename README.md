@@ -20,6 +20,12 @@ and segmented proclitics/enclitics** — ranked by corpus frequency.
 > Named after **al-Khalīl ibn Aḥmad al-Farāhīdī** (الخليل بن أحمد الفراهيدي), the
 > 8th-century founder of Arabic lexicography and prosody.
 
+## Live demo
+
+**[forzagreen.github.io/farahidi-js](https://forzagreen.github.io/farahidi-js/)** — the
+whole analyzer (engine + lexicon) runs in your browser; no server, nothing sent anywhere.
+Type any Arabic word to see every analysis, or a sentence for in-context disambiguation.
+
 ## Install
 
 ```bash
@@ -123,3 +129,19 @@ npm run lint
 
 The bundled data and the `golden.jsonl` fixture are copied verbatim from the
 Python `farahidi` package; they are not regenerated here.
+
+### The browser demo
+
+```bash
+npm run build:demo   # bundles demo/ + dist + data into ./site
+npm run serve:demo   # preview at http://localhost:8080
+```
+
+`site/` is a static site (committed to no branch — built in CI). It works because
+the engine's data layer is pluggable: the page fetches the gzip tables, decompresses
+them with the browser-native `DecompressionStream`, and injects the text via the
+exported `provideRawText()` so the synchronous analyzer runs unchanged. The Layer-2
+language model is downloaded only when the sentence demo is first used.
+
+Deployment is automated by `.github/workflows/pages.yml` (build → `actions/deploy-pages`).
+To enable it once: repo **Settings → Pages → Source: GitHub Actions**.

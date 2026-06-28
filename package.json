@@ -45,16 +45,19 @@
   "scripts": {
     "copy-data": "node scripts/copy-data.mjs",
     "build": "tsup && npm run copy-data",
+    "build:demo": "npm run build && node scripts/build-demo.mjs",
+    "serve:demo": "node scripts/serve-demo.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
-    "format": "prettier --write \"{src,test,scripts}/**/*.{ts,mjs}\"",
+    "format": "prettier --write \"{src,test,scripts,demo}/**/*.{ts,mjs}\"",
     "prepublishOnly": "npm run build && npm test"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
     "@types/node": "^20.14.0",
+    "esbuild": "^0.24.0",
     "eslint": "^9.13.0",
     "prettier": "^3.3.0",
     "tsup": "^8.3.0",

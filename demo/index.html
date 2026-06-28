@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>farahidi — Arabic morphological analyzer (live demo)</title>
+    <meta
+      name="description"
+      content="Live, in-browser demo of farahidi: a pure-JS Arabic morphological analyzer (AlKhalil Morpho Sys 2 port). Root, lemma, pattern, POS and clitics for any Arabic word."
+    />
+    <style>
+      :root {
+        --bg: #0f1115;
+        --panel: #181b22;
+        --panel-2: #1f2430;
+        --border: #2a3040;
+        --text: #e8ecf3;
+        --muted: #9aa6b8;
+        --accent: #6ea8fe;
+        --accent-2: #7ee2b8;
+        --chip: #232938;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        padding: 0 16px 64px;
+      }
+      .arabic { font-family: "Geeza Pro", "Noto Naskh Arabic", "Amiri", "Times New Roman", serif; }
+      .wrap { max-width: 960px; margin: 0 auto; }
+      header { padding: 40px 0 8px; }
+      h1 { margin: 0 0 4px; font-size: 30px; letter-spacing: -0.02em; }
+      h1 .ar { color: var(--accent-2); }
+      .tag { color: var(--muted); margin: 0 0 14px; }
+      .links a { color: var(--accent); text-decoration: none; margin-inline-end: 14px; font-size: 14px; }
+      .links a:hover { text-decoration: underline; }
+
+      #bootbar {
+        margin: 16px 0; padding: 12px 14px; border: 1px solid var(--border);
+        background: var(--panel); border-radius: 10px; color: var(--muted); font-size: 14px;
+      }
+      .bar { height: 6px; background: var(--panel-2); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+      .bar > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 0.15s; }
+
+      section { margin-top: 28px; }
+      h2 { font-size: 18px; margin: 0 0 10px; }
+      .row { display: flex; gap: 8px; flex-wrap: wrap; }
+      input[type="text"] {
+        flex: 1 1 280px; min-width: 0; padding: 11px 14px; font-size: 17px;
+        background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 10px;
+      }
+      input[type="text"].arabic { text-align: right; direction: rtl; }
+      input::placeholder { color: #5d6678; }
+      button {
+        padding: 11px 18px; font-size: 15px; font-weight: 600; cursor: pointer;
+        background: var(--accent); color: #0b1020; border: 0; border-radius: 10px;
+      }
+      button:disabled { opacity: 0.5; cursor: progress; }
+      .chips { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+      .chip {
+        font-size: 16px; padding: 5px 12px; border-radius: 999px; cursor: pointer;
+        background: var(--chip); border: 1px solid var(--border); color: var(--text);
+      }
+      .chip:hover { border-color: var(--accent); }
+      .hint { color: var(--muted); font-size: 13px; margin: 8px 2px 0; }
+
+      .result { margin-top: 16px; }
+      .count { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+      .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+      table { border-collapse: collapse; width: 100%; font-size: 14px; }
+      th, td { padding: 8px 10px; text-align: start; border-bottom: 1px solid var(--border); white-space: nowrap; }
+      thead th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); font-weight: 600; z-index: 1; }
+      tbody tr:nth-child(even) { background: rgba(255,255,255,0.015); }
+      tbody tr:hover { background: rgba(110,168,254,0.08); }
+      td.ar { font-size: 17px; direction: rtl; }
+      td.dim { color: var(--muted); }
+      .pos { color: var(--accent-2); }
+      .empty { color: var(--muted); padding: 14px 4px; }
+      footer { margin-top: 48px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); padding-top: 16px; }
+      footer a { color: var(--accent); }
+      code { background: var(--panel-2); padding: 1px 6px; border-radius: 5px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>farahidi <span class="ar arabic">الفراهيدي</span></h1>
+        <p class="tag">
+          Arabic morphological analyzer running entirely in your browser — root, lemma, pattern
+          (wazn), part of speech and clitics, ported from AlKhalil Morpho Sys 2.
+        </p>
+        <p class="links">
+          <a href="https://www.npmjs.com/package/farahidi" target="_blank" rel="noopener">npm</a>
+          <a href="https://github.com/forzagreen/farahidi-js" target="_blank" rel="noopener">GitHub</a>
+          <span id="ver" class="hint" style="display:inline"></span>
+        </p>
+      </header>
+
+      <div id="bootbar">
+        Loading the lexicon (~5&nbsp;MB, one time)…
+        <div class="bar"><div id="bootprog"></div></div>
+      </div>
+
+      <section id="wordSection" hidden>
+        <h2>Analyze a word</h2>
+        <div class="row">
+          <input id="wordInput" class="arabic" type="text" placeholder="اكتب كلمة عربية…" autocomplete="off" />
+          <button id="wordBtn">Analyze</button>
+        </div>
+        <div class="chips" id="wordChips"></div>
+        <p class="hint">Every valid analysis, ranked by corpus frequency (highest first).</p>
+        <div class="result" id="wordResult"></div>
+      </section>
+
+      <section id="sentSection" hidden>
+        <h2>Disambiguate a sentence <span class="hint">(in-context)</span></h2>
+        <div class="row">
+          <input id="sentInput" class="arabic" type="text" placeholder="اكتب جملة عربية…" autocomplete="off" />
+          <button id="sentBtn">Analyze</button>
+        </div>
+        <div class="chips" id="sentChips"></div>
+        <p class="hint" id="sentHint">
+          Picks one lemma / stem / root per word across the sentence. First use downloads the
+          language model (~5&nbsp;MB).
+        </p>
+        <div class="result" id="sentResult"></div>
+      </section>
+
+      <footer>
+        <p>
+          Pure JavaScript, no server — the analyzer and its whole lexicon run locally in this page.
+          Output is validated to exact parity with the original Java reference. Bundled linguistic
+          data is © the Oujda NLP Team, GPL-3.0. Install for Node:
+          <code>npm i farahidi</code>.
+        </p>
+      </footer>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
