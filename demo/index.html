@@ -66,8 +66,9 @@
       .wrap { max-width: 1000px; margin: 0 auto; }
       .num { direction: ltr; unicode-bidi: isolate; }
 
-      header { padding: 36px 0 8px; position: relative; }
-      h1 { margin: 0 0 6px; font-size: 38px; font-weight: 700; }
+      header { padding: 36px 0 8px; }
+      .headtop { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+      h1 { margin: 0; font-size: 38px; font-weight: 700; }
       h1 .en { color: var(--accent-2); font-size: 26px; }
       .tag { color: var(--muted); margin: 0 0 12px; font-size: 18px; max-width: 70ch; }
       .links a { color: var(--accent); text-decoration: none; margin-inline-start: 16px; }
@@ -76,8 +77,7 @@
 
       /* theme switcher (segmented, icons) */
       .theme {
-        position: absolute; top: 36px; inset-inline-start: 0;
-        display: inline-flex; gap: 2px; padding: 4px;
+        display: inline-flex; gap: 2px; padding: 4px; flex: none;
         background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
       }
       .theme button {
@@ -137,19 +137,20 @@
   <body>
     <div class="wrap">
       <header>
-        <div class="theme" id="theme" role="group" aria-label="نمط العرض">
-          <button data-mode="auto" title="تلقائي" aria-label="تلقائي">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          </button>
-          <button data-mode="light" title="فاتح" aria-label="فاتح">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>
-          </button>
-          <button data-mode="dark" title="داكن" aria-label="داكن">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          </button>
+        <div class="headtop">
+          <h1>الفراهيدي <span class="en">farahidi</span></h1>
+          <div class="theme" id="theme" role="group" aria-label="نمط العرض">
+            <button data-mode="auto" title="تلقائي" aria-label="تلقائي">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </button>
+            <button data-mode="light" title="فاتح" aria-label="فاتح">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>
+            </button>
+            <button data-mode="dark" title="داكن" aria-label="داكن">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+          </div>
         </div>
-
-        <h1>الفراهيدي <span class="en">farahidi</span></h1>
         <p class="tag">
           محلِّل صرفي للّغة العربية يعمل بالكامل داخل متصفِّحك — يستخرج الجذر واللمة والوزن
           والنوع الصرفي والسوابق واللواحق، وهو نسخة من «نظام الخليل الصرفي 2».
