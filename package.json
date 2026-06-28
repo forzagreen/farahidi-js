@@ -1,6 +1,6 @@
 {
   "name": "farahidi",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Arabic morphological analyzer — a pure-JS/TypeScript port of AlKhalil Morpho Sys 2",
   "keywords": [
     "arabic",
