@@ -85,8 +85,8 @@ const farahidi = {
 (globalThis as unknown as { farahidi: typeof farahidi }).farahidi = farahidi;
 
 // ------------------------------------------------------------------------ UI
-const WORD_EXAMPLES = ["مدرسة", "لأنهم", "الكتاب", "يكتبون", "استقلال", "بالمدرسة", "قال"];
-const SENT_EXAMPLES = ["ذهب الولد إلى المدرسة", "قرأ الطالب الكتاب", "العلم نور"];
+const WORD_EXAMPLES = ["مدرسة", "كَتَبَ", "لأنهم", "الْكِتَاب", "يكتبون", "قَالَ", "بالمدرسة", "مُسْلِمُونَ"];
+const SENT_EXAMPLES = ["ذهب الولد إلى المدرسة", "ذَهَبَ الوَلَدُ إلى المَدْرَسَةِ", "العلم نور"];
 
 function el<T extends HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
@@ -230,7 +230,7 @@ function main(): void {
         sentBtn.disabled = false;
         return;
       }
-      sentHint.textContent = "يختار لِمّةً وجِذعًا وجذرًا واحدًا لكل كلمة ضمن سياق الجملة.";
+      sentHint.textContent = "يختار مدخلًا معجميًا وجِذعًا وجذرًا واحدًا لكل كلمة ضمن سياق الجملة.";
       sentBtn.disabled = false;
     }
     renderTokens(sentResult, analyzeText(text));
