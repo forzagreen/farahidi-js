@@ -1,7 +1,8 @@
 # farahidi
 
 **Arabic morphological analyzer for JavaScript / TypeScript** — a pure-JS
-re-implementation of [AlKhalil Morpho Sys 2](https://alkhalil.oujda-nlp-team.net/)
+re-implementation of the original Java
+[AlKhalil Morpho Sys 2](https://alkhalil.oujda-nlp-team.net/AlKhalil-MorphoSys.php)
 (Oujda NLP Team), ported 1:1 from the Python
 [`farahidi`](https://github.com/forzagreen/farahidi) library.
 
