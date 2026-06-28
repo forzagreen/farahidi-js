@@ -96,6 +96,12 @@ function esc(s: string): string {
   return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
 }
 
+// The `priority` field is a 10-decimal string (for parity); show fewer digits.
+function fmtPriority(p: string): string {
+  const n = Number(p);
+  return Number.isNaN(n) ? p : n.toFixed(4);
+}
+
 function renderAnalyses(host: HTMLElement, word: string, list: Analysis[]): void {
   if (list.length === 0) {
     host.innerHTML = `<p class="empty">لا يوجد تحليل للكلمة «${esc(word)}».</p>`;
@@ -114,7 +120,7 @@ function renderAnalyses(host: HTMLElement, word: string, list: Analysis[]): void
         `<td>${esc(a.caseOrMood)}</td>`,
         `<td class="dim">${esc(a.proclitic)}</td>`,
         `<td class="dim">${esc(a.enclitic)}</td>`,
-        `<td class="num dim">${esc(a.priority)}</td>`,
+        `<td class="num dim">${esc(fmtPriority(a.priority))}</td>`,
       ];
       return `<tr>${cells.join("")}</tr>`;
     })
