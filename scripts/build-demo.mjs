@@ -46,6 +46,7 @@ await build({
   target: "es2022",
   minify: true,
   sourcemap: true,
+  charset: "utf8",
   outfile: resolve(site, "app.js"),
   plugins: [stubNodeBuiltins],
   logLevel: "info",

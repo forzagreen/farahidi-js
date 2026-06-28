@@ -1,15 +1,46 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>farahidi — Arabic morphological analyzer (live demo)</title>
+    <title>الفراهيدي — محلِّل صرفي للّغة العربية</title>
     <meta
       name="description"
-      content="Live, in-browser demo of farahidi: a pure-JS Arabic morphological analyzer (AlKhalil Morpho Sys 2 port). Root, lemma, pattern, POS and clitics for any Arabic word."
+      content="محلِّل صرفي للّغة العربية يعمل بالكامل داخل المتصفّح: الجذر واللمة والوزن والنوع والسوابق واللواحق لأي كلمة عربية. نسخة جافاسكربت من نظام الخليل الصرفي."
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Apply the saved theme before paint to avoid a flash.
+      (function () {
+        try {
+          var p = localStorage.getItem("farahidi-theme") || "auto";
+          var dark = p === "dark" || (p === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+        } catch (e) {
+          document.documentElement.dataset.theme = "dark";
+        }
+      })();
+    </script>
     <style>
-      :root {
+      [data-theme="light"] {
+        --bg: #f6f7f9;
+        --panel: #ffffff;
+        --panel-2: #eef1f6;
+        --border: #d8dde6;
+        --text: #1b2230;
+        --muted: #5c6678;
+        --accent: #2f6fed;
+        --accent-2: #0e9f6e;
+        --chip: #eef1f6;
+        --btn-text: #ffffff;
+        color-scheme: light;
+      }
+      [data-theme="dark"] {
         --bg: #0f1115;
         --panel: #181b22;
         --panel-2: #1f2430;
@@ -19,121 +50,153 @@
         --accent: #6ea8fe;
         --accent-2: #7ee2b8;
         --chip: #232938;
+        --btn-text: #0b1020;
+        color-scheme: dark;
       }
       * { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; }
       body {
         background: var(--bg);
         color: var(--text);
-        font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-family: "Scheherazade New", "Times New Roman", serif;
+        font-size: 18px;
+        line-height: 1.8;
         padding: 0 16px 64px;
       }
-      .arabic { font-family: "Geeza Pro", "Noto Naskh Arabic", "Amiri", "Times New Roman", serif; }
-      .wrap { max-width: 960px; margin: 0 auto; }
-      header { padding: 40px 0 8px; }
-      h1 { margin: 0 0 4px; font-size: 30px; letter-spacing: -0.02em; }
-      h1 .ar { color: var(--accent-2); }
-      .tag { color: var(--muted); margin: 0 0 14px; }
-      .links a { color: var(--accent); text-decoration: none; margin-inline-end: 14px; font-size: 14px; }
+      .wrap { max-width: 1000px; margin: 0 auto; }
+      .num { direction: ltr; unicode-bidi: isolate; }
+
+      header { padding: 36px 0 8px; position: relative; }
+      h1 { margin: 0 0 6px; font-size: 38px; font-weight: 700; }
+      h1 .en { color: var(--accent-2); font-size: 26px; }
+      .tag { color: var(--muted); margin: 0 0 12px; font-size: 18px; max-width: 70ch; }
+      .links a { color: var(--accent); text-decoration: none; margin-inline-start: 16px; }
       .links a:hover { text-decoration: underline; }
+      .links .ver { color: var(--muted); font-size: 15px; }
+
+      /* theme switcher (segmented, icons) */
+      .theme {
+        position: absolute; top: 36px; inset-inline-start: 0;
+        display: inline-flex; gap: 2px; padding: 4px;
+        background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      }
+      .theme button {
+        display: grid; place-items: center; width: 34px; height: 30px;
+        background: transparent; border: 0; border-radius: 8px; cursor: pointer; color: var(--muted);
+      }
+      .theme button:hover { color: var(--text); }
+      .theme button.active { background: var(--panel-2); color: var(--accent); }
+      .theme svg { width: 18px; height: 18px; }
 
       #bootbar {
-        margin: 16px 0; padding: 12px 14px; border: 1px solid var(--border);
-        background: var(--panel); border-radius: 10px; color: var(--muted); font-size: 14px;
+        margin: 18px 0; padding: 13px 16px; border: 1px solid var(--border);
+        background: var(--panel); border-radius: 12px; color: var(--muted); font-size: 17px;
       }
-      .bar { height: 6px; background: var(--panel-2); border-radius: 4px; overflow: hidden; margin-top: 8px; }
-      .bar > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 0.15s; }
+      .bar { height: 7px; background: var(--panel-2); border-radius: 4px; overflow: hidden; margin-top: 9px; }
+      .bar > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transition: width 0.15s; }
 
-      section { margin-top: 28px; }
-      h2 { font-size: 18px; margin: 0 0 10px; }
-      .row { display: flex; gap: 8px; flex-wrap: wrap; }
+      section { margin-top: 30px; }
+      h2 { font-size: 24px; margin: 0 0 10px; font-weight: 700; }
+      h2 .sub { color: var(--muted); font-size: 16px; font-weight: 400; }
+      .row { display: flex; gap: 10px; flex-wrap: wrap; }
       input[type="text"] {
-        flex: 1 1 280px; min-width: 0; padding: 11px 14px; font-size: 17px;
-        background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 10px;
+        flex: 1 1 280px; min-width: 0; padding: 12px 16px; font-size: 22px;
+        font-family: inherit; text-align: right; direction: rtl;
+        background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 12px;
       }
-      input[type="text"].arabic { text-align: right; direction: rtl; }
-      input::placeholder { color: #5d6678; }
-      button {
-        padding: 11px 18px; font-size: 15px; font-weight: 600; cursor: pointer;
-        background: var(--accent); color: #0b1020; border: 0; border-radius: 10px;
+      input::placeholder { color: var(--muted); opacity: 0.7; }
+      button.go {
+        padding: 12px 26px; font-size: 19px; font-weight: 700; cursor: pointer; font-family: inherit;
+        background: var(--accent); color: var(--btn-text); border: 0; border-radius: 12px;
       }
-      button:disabled { opacity: 0.5; cursor: progress; }
-      .chips { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+      button.go:disabled { opacity: 0.5; cursor: progress; }
+      .chips { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
       .chip {
-        font-size: 16px; padding: 5px 12px; border-radius: 999px; cursor: pointer;
+        font-size: 20px; padding: 5px 16px; border-radius: 999px; cursor: pointer; font-family: inherit;
         background: var(--chip); border: 1px solid var(--border); color: var(--text);
       }
       .chip:hover { border-color: var(--accent); }
-      .hint { color: var(--muted); font-size: 13px; margin: 8px 2px 0; }
+      .hint { color: var(--muted); font-size: 16px; margin: 10px 2px 0; }
 
       .result { margin-top: 16px; }
-      .count { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
-      .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
-      table { border-collapse: collapse; width: 100%; font-size: 14px; }
-      th, td { padding: 8px 10px; text-align: start; border-bottom: 1px solid var(--border); white-space: nowrap; }
-      thead th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); font-weight: 600; z-index: 1; }
-      tbody tr:nth-child(even) { background: rgba(255,255,255,0.015); }
-      tbody tr:hover { background: rgba(110,168,254,0.08); }
-      td.ar { font-size: 17px; direction: rtl; }
+      .count { color: var(--muted); font-size: 16px; margin-bottom: 8px; }
+      .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+      table { border-collapse: collapse; width: 100%; font-size: 18px; }
+      th, td { padding: 9px 12px; text-align: start; border-bottom: 1px solid var(--border); white-space: nowrap; }
+      thead th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); font-weight: 700; z-index: 1; }
+      tbody tr:nth-child(even) { background: rgba(128,128,128,0.05); }
+      tbody tr:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+      td.pos { color: var(--accent-2); }
       td.dim { color: var(--muted); }
-      .pos { color: var(--accent-2); }
-      .empty { color: var(--muted); padding: 14px 4px; }
-      footer { margin-top: 48px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); padding-top: 16px; }
+      .empty { color: var(--muted); padding: 14px 4px; font-size: 18px; }
+      footer { margin-top: 52px; color: var(--muted); font-size: 16px; border-top: 1px solid var(--border); padding-top: 18px; }
       footer a { color: var(--accent); }
-      code { background: var(--panel-2); padding: 1px 6px; border-radius: 5px; }
+      code { font-family: ui-monospace, Menlo, Consolas, monospace; background: var(--panel-2); padding: 1px 7px; border-radius: 6px; direction: ltr; unicode-bidi: isolate; }
     </style>
   </head>
   <body>
     <div class="wrap">
       <header>
-        <h1>farahidi <span class="ar arabic">الفراهيدي</span></h1>
+        <div class="theme" id="theme" role="group" aria-label="نمط العرض">
+          <button data-mode="auto" title="تلقائي" aria-label="تلقائي">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </button>
+          <button data-mode="light" title="فاتح" aria-label="فاتح">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>
+          </button>
+          <button data-mode="dark" title="داكن" aria-label="داكن">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+        </div>
+
+        <h1>الفراهيدي <span class="en">farahidi</span></h1>
         <p class="tag">
-          Arabic morphological analyzer running entirely in your browser — root, lemma, pattern
-          (wazn), part of speech and clitics, ported from AlKhalil Morpho Sys 2.
+          محلِّل صرفي للّغة العربية يعمل بالكامل داخل متصفِّحك — يستخرج الجذر واللمة والوزن
+          والنوع الصرفي والسوابق واللواحق، وهو نسخة من «نظام الخليل الصرفي 2».
         </p>
         <p class="links">
           <a href="https://www.npmjs.com/package/farahidi" target="_blank" rel="noopener">npm</a>
           <a href="https://github.com/forzagreen/farahidi-js" target="_blank" rel="noopener">GitHub</a>
-          <span id="ver" class="hint" style="display:inline"></span>
+          <span id="ver" class="ver"></span>
         </p>
       </header>
 
       <div id="bootbar">
-        Loading the lexicon (~5&nbsp;MB, one time)…
+        جارٍ تحميل المعجم (نحو <span class="num">5</span> ميغابايت، لمرّة واحدة)…
         <div class="bar"><div id="bootprog"></div></div>
       </div>
 
       <section id="wordSection" hidden>
-        <h2>Analyze a word</h2>
+        <h2>تحليل كلمة</h2>
         <div class="row">
-          <input id="wordInput" class="arabic" type="text" placeholder="اكتب كلمة عربية…" autocomplete="off" />
-          <button id="wordBtn">Analyze</button>
+          <input id="wordInput" type="text" placeholder="اكتب كلمة عربية…" autocomplete="off" />
+          <button class="go" id="wordBtn">حلِّل</button>
         </div>
         <div class="chips" id="wordChips"></div>
-        <p class="hint">Every valid analysis, ranked by corpus frequency (highest first).</p>
+        <p class="hint">جميع التحليلات الصحيحة، مرتَّبة حسب تكرارها في المدوَّنة (الأكثر تكرارًا أولًا).</p>
         <div class="result" id="wordResult"></div>
       </section>
 
       <section id="sentSection" hidden>
-        <h2>Disambiguate a sentence <span class="hint">(in-context)</span></h2>
+        <h2>تحليل جملة <span class="sub">حسب السياق</span></h2>
         <div class="row">
-          <input id="sentInput" class="arabic" type="text" placeholder="اكتب جملة عربية…" autocomplete="off" />
-          <button id="sentBtn">Analyze</button>
+          <input id="sentInput" type="text" placeholder="اكتب جملة عربية…" autocomplete="off" />
+          <button class="go" id="sentBtn">حلِّل</button>
         </div>
         <div class="chips" id="sentChips"></div>
         <p class="hint" id="sentHint">
-          Picks one lemma / stem / root per word across the sentence. First use downloads the
-          language model (~5&nbsp;MB).
+          يختار لِمّةً وجِذعًا وجذرًا واحدًا لكل كلمة ضمن سياق الجملة. التحميل الأوّل يجلب النموذج
+          اللغوي (نحو <span class="num">5</span> ميغابايت).
         </p>
         <div class="result" id="sentResult"></div>
       </section>
 
       <footer>
         <p>
-          Pure JavaScript, no server — the analyzer and its whole lexicon run locally in this page.
-          Output is validated to exact parity with the original Java reference. Bundled linguistic
-          data is © the Oujda NLP Team, GPL-3.0. Install for Node:
-          <code>npm i farahidi</code>.
+          محرِّك خالص بلغة جافاسكربت دون أي خادم — المحلِّل ومعجمه كاملًا يعملان محليًا في هذه
+          الصفحة، ولا يُرسَل شيء إلى الخارج. النتائج مطابقة تمامًا للمرجع الأصلي (جافا). البيانات
+          اللغوية المضمَّنة من إعداد فريق وجدة لمعالجة اللغة (Oujda NLP Team)، برخصة GPL-3.0.
+          للتثبيت في Node: <code>npm i farahidi</code>.
         </p>
       </footer>
     </div>

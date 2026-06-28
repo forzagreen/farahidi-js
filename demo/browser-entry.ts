@@ -98,45 +98,45 @@ function esc(s: string): string {
 
 function renderAnalyses(host: HTMLElement, word: string, list: Analysis[]): void {
   if (list.length === 0) {
-    host.innerHTML = `<p class="empty">No analysis found for <span class="arabic">${esc(word)}</span>.</p>`;
+    host.innerHTML = `<p class="empty">لا يوجد تحليل للكلمة «${esc(word)}».</p>`;
     return;
   }
-  const head = ["#", "voweled", "lemma", "root", "pattern", "part of speech", "case/mood", "proclitic", "enclitic", "priority"];
+  const head = ["#", "الكلمة المشكولة", "المدخل", "الجذر", "الوزن", "النوع والخصائص", "الإعراب", "السابقة", "اللاحقة", "الترجيح"];
   const rows = list
     .map((a, i) => {
       const cells = [
-        `<td class="dim">${i + 1}</td>`,
-        `<td class="ar arabic">${esc(a.voweledWord)}</td>`,
-        `<td class="ar arabic">${esc(a.lemma)}</td>`,
-        `<td class="ar arabic">${esc(a.root)}</td>`,
-        `<td class="ar arabic">${esc(a.patternStem)}</td>`,
-        `<td class="ar arabic pos">${esc(a.partOfSpeech)}</td>`,
-        `<td class="ar arabic">${esc(a.caseOrMood)}</td>`,
-        `<td class="ar arabic dim">${esc(a.proclitic)}</td>`,
-        `<td class="ar arabic dim">${esc(a.enclitic)}</td>`,
-        `<td class="dim">${esc(a.priority)}</td>`,
+        `<td class="num dim">${i + 1}</td>`,
+        `<td>${esc(a.voweledWord)}</td>`,
+        `<td>${esc(a.lemma)}</td>`,
+        `<td>${esc(a.root)}</td>`,
+        `<td>${esc(a.patternStem)}</td>`,
+        `<td class="pos">${esc(a.partOfSpeech)}</td>`,
+        `<td>${esc(a.caseOrMood)}</td>`,
+        `<td class="dim">${esc(a.proclitic)}</td>`,
+        `<td class="dim">${esc(a.enclitic)}</td>`,
+        `<td class="num dim">${esc(a.priority)}</td>`,
       ];
       return `<tr>${cells.join("")}</tr>`;
     })
     .join("");
   host.innerHTML =
-    `<p class="count">${list.length} analysis${list.length === 1 ? "" : "es"}</p>` +
+    `<p class="count">عدد التحليلات: <span class="num">${list.length}</span></p>` +
     `<div class="tablewrap"><table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function renderTokens(host: HTMLElement, list: TokenResult[]): void {
   if (list.length === 0) {
-    host.innerHTML = `<p class="empty">No tokens found.</p>`;
+    host.innerHTML = `<p class="empty">لا توجد كلمات.</p>`;
     return;
   }
-  const head = ["token", "lemma", "stem", "root"];
+  const head = ["الكلمة", "المدخل", "الجِذع", "الجذر"];
   const rows = list
     .map((r) => {
       const cells = [
-        `<td class="ar arabic">${esc(r.token)}</td>`,
-        `<td class="ar arabic">${esc(r.lemma)}</td>`,
-        `<td class="ar arabic">${esc(r.stem)}</td>`,
-        `<td class="ar arabic">${esc(r.root)}</td>`,
+        `<td>${esc(r.token)}</td>`,
+        `<td>${esc(r.lemma)}</td>`,
+        `<td>${esc(r.stem)}</td>`,
+        `<td>${esc(r.root)}</td>`,
       ];
       return `<tr>${cells.join("")}</tr>`;
     })
@@ -150,14 +150,49 @@ function makeChips(host: HTMLElement, items: string[], onPick: (s: string) => vo
   host.innerHTML = "";
   for (const item of items) {
     const c = document.createElement("span");
-    c.className = "chip arabic";
+    c.className = "chip";
     c.textContent = item;
     c.addEventListener("click", () => onPick(item));
     host.appendChild(c);
   }
 }
 
+function setupTheme(): void {
+  const KEY = "farahidi-theme";
+  const root = document.documentElement;
+  const buttons = Array.from(el("theme").querySelectorAll<HTMLButtonElement>("button[data-mode]"));
+  const media = matchMedia("(prefers-color-scheme: dark)");
+  const getPref = (): string => {
+    try {
+      return localStorage.getItem(KEY) || "auto";
+    } catch {
+      return "auto";
+    }
+  };
+  const apply = (): void => {
+    const pref = getPref();
+    const dark = pref === "dark" || (pref === "auto" && media.matches);
+    root.dataset.theme = dark ? "dark" : "light";
+    for (const b of buttons) b.classList.toggle("active", b.dataset.mode === pref);
+  };
+  for (const b of buttons) {
+    b.addEventListener("click", () => {
+      try {
+        localStorage.setItem(KEY, b.dataset.mode!);
+      } catch {
+        /* ignore storage errors (private mode) */
+      }
+      apply();
+    });
+  }
+  media.addEventListener("change", () => {
+    if (getPref() === "auto") apply();
+  });
+  apply();
+}
+
 function main(): void {
+  setupTheme();
   el("ver").textContent = `v${version}`;
 
   const bootbar = el("bootbar");
@@ -187,15 +222,15 @@ function main(): void {
     sentInput.value = text;
     if (!farahidi.isLayer2Ready()) {
       sentBtn.disabled = true;
-      sentHint.textContent = "Downloading the language model (~5 MB)…";
+      sentHint.textContent = "جارٍ تحميل النموذج اللغوي (نحو 5 ميغابايت)…";
       try {
         await loadLayer2();
       } catch (e) {
-        sentHint.textContent = "Failed to load the language model: " + String(e);
+        sentHint.textContent = "تعذّر تحميل النموذج اللغوي: " + String(e);
         sentBtn.disabled = false;
         return;
       }
-      sentHint.textContent = "Picks one lemma / stem / root per word across the sentence.";
+      sentHint.textContent = "يختار لِمّةً وجِذعًا وجذرًا واحدًا لكل كلمة ضمن سياق الجملة.";
       sentBtn.disabled = false;
     }
     renderTokens(sentResult, analyzeText(text));
@@ -222,7 +257,7 @@ function main(): void {
       runWord("مدرسة");
     })
     .catch((e) => {
-      bootbar.innerHTML = `<b>Failed to load the lexicon.</b> ${esc(String(e))}`;
+      bootbar.innerHTML = `<b>تعذّر تحميل المعجم.</b> ${esc(String(e))}`;
     });
 }
 
