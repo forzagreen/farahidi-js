@@ -17,17 +17,25 @@
  * calls.
  */
 import { Analyzer } from "./analyzer.js";
-import type { Analysis } from "./models.js";
+import { Disambiguator } from "./disambiguate.js";
+import type { Analysis, TokenResult } from "./models.js";
 
 export { Analyzer } from "./analyzer.js";
-export type { Analysis } from "./models.js";
+export { Disambiguator, tokenize } from "./disambiguate.js";
+export type { Analysis, TokenResult } from "./models.js";
 export const version = "0.2.0";
 
 let defaultAnalyzer: Analyzer | undefined;
+let defaultDisambiguator: Disambiguator | undefined;
 
 function getDefaultAnalyzer(): Analyzer {
   if (!defaultAnalyzer) defaultAnalyzer = new Analyzer();
   return defaultAnalyzer;
+}
+
+function getDefaultDisambiguator(): Disambiguator {
+  if (!defaultDisambiguator) defaultDisambiguator = new Disambiguator(getDefaultAnalyzer());
+  return defaultDisambiguator;
 }
 
 /**
@@ -36,4 +44,12 @@ function getDefaultAnalyzer(): Analyzer {
  */
 export function analyze(word: string): Analysis[] {
   return getDefaultAnalyzer().analyze(word);
+}
+
+/**
+ * In-context analysis: one chosen lemma/stem/root per word token across the
+ * sentence(s) in `text`. Uses a shared module-level {@link Disambiguator}.
+ */
+export function analyzeText(text: string): TokenResult[] {
+  return getDefaultDisambiguator().analyzeText(text);
 }

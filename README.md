@@ -10,12 +10,12 @@ Given an Arabic word, `farahidi` returns every valid morphological analysis —
 and segmented proclitics/enclitics** — ranked by corpus frequency.
 
 - **Pure JS, zero runtime dependencies.** ESM + CommonJS, typed. Node 18–24.
-- **Offline.** The full lexicon ships gzip-compressed inside the package
-  (~4.8 MB); nothing is downloaded at runtime, decompressed lazily with
-  `node:zlib`.
-- **Faithful.** Output is validated to exact multiset parity against the Python
-  reference, which is itself validated against the original Java
-  `AlKhalil2Analyzer` (98-word golden fixture).
+- **Offline.** The full lexicon plus the in-context language model ship
+  gzip-compressed inside the package (~11 MB); nothing is downloaded at runtime,
+  decompressed lazily with `node:zlib`.
+- **Faithful.** Output is validated to exact parity against the original Java
+  `AlKhalil2Analyzer` (single-word) and `ADATAnalyzer` (in-context) via golden
+  fixtures.
 
 > Named after **al-Khalīl ibn Aḥmad al-Farāhīdī** (الخليل بن أحمد الفراهيدي), the
 > 8th-century founder of Arabic lexicography and prosody.
@@ -69,12 +69,39 @@ const az = new Analyzer();
 const results = az.analyze("مدرسة");
 ```
 
+### In-context disambiguation
+
+`analyzeText()` picks the single best analysis per token across a sentence,
+returning one `TokenResult` per word with the chosen `lemma`, `stem`, and `root`:
+
+```ts
+import { analyzeText } from "farahidi";
+
+for (const r of analyzeText("ذهب الولد إلى المدرسة")) {
+  console.log(r.token, r.lemma, r.stem, r.root);
+}
+// ذهب ذَهَبَ ذَهَب ذهب
+// الولد وَلَد وَلَد ولد
+// إلى إِلَى إِلَى -
+// المدرسة مَدْرَسَة مَدْرَسَة درس
+```
+
+A reusable `Disambiguator` is also exposed; `disambiguate(tokens)` takes a
+pre-tokenized list. `TokenResult.analyzed` is `false` for tokens the analyzer
+could not analyze (lemma/stem/root then fall back to the token).
+
 ## Scope
 
-- **Layer 1** — out-of-context analysis of a single word (`analyze`), returning
-  all candidates ranked by frequency. **Implemented and validated.**
-- **Layer 2** — in-context disambiguation (one chosen lemma/stem/root per token
-  across a sentence) exists in the Python library and is not yet ported here.
+- **Layer 1** — out-of-context analysis of a single word (`analyze` /
+  `Analyzer`), returning all candidates ranked by frequency.
+- **Layer 2** — in-context disambiguation (`analyzeText` / `Disambiguator`), a
+  faithful port of AlKhalil's shipped `ADATAnalyzer` (lemmatizer + light/heavy
+  stemmer). The chosen lemma is exact; the stem/root are then selected by corpus
+  frequency among that lemma's analyses. On exact frequency ties the pick depends
+  on analysis enumeration order, which can differ from the Java reference (its
+  decoder draws stems/roots from a `HashSet`); the lemma decode is unaffected.
+
+Both layers are validated to per-token parity against the Java reference.
 
 ## Data & license
 

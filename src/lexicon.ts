@@ -81,6 +81,15 @@ function readLines(filename: string): string[] {
   return text.split("\n");
 }
 
+/**
+ * Decompress a bundled `.gz` file (full name incl. extension) to text. Used by
+ * the Layer-2 language model to read the plain-text `.lm`. Decoded as latin1
+ * (the `.lm` is pure ASCII Buckwalter; latin1 is a lossless 1:1 byte mapping).
+ */
+export function readGzipText(filenameWithExt: string): string {
+  return gunzipSync(readFileSync(DATA_DIR + filenameWithExt)).toString("latin1");
+}
+
 /** Load a `*.map` table as a `Map<key, value>` (cached). */
 export function loadMap(filename: string): Map<unknown, unknown> {
   const hit = mapCache.get(filename);

@@ -21,3 +21,21 @@ export interface Analysis {
   enclitic: string;
   priority: string;
 }
+
+/**
+ * One token's in-context (Layer-2) disambiguation result.
+ *
+ * Mirrors AlKhalil's `ADATAnalyzer` outputs: `lemma` is the single analysis
+ * chosen by the HMM, `stem` / `root` are then the highest-corpus-frequency
+ * stem/root among the analyses sharing that lemma (lemmatizer / light stemmer /
+ * heavy stemmer respectively). `analyzed` is `false` for tokens the analyzer
+ * could not analyze, in which case lemma/stem/root all fall back to `token`.
+ * All strings are Arabic script.
+ */
+export interface TokenResult {
+  token: string;
+  lemma: string;
+  stem: string;
+  root: string;
+  analyzed: boolean;
+}
