@@ -1,5 +1,10 @@
 # farahidi
 
+[![npm](https://img.shields.io/npm/v/farahidi)](https://www.npmjs.com/package/farahidi)
+[![Node.js version](https://img.shields.io/node/v/farahidi)](https://www.npmjs.com/package/farahidi)
+[![CI](https://github.com/forzagreen/farahidi-js/actions/workflows/ci.yml/badge.svg)](https://github.com/forzagreen/farahidi-js/actions/workflows/ci.yml)
+[![License](https://img.shields.io/npm/l/farahidi)](LICENSE)
+
 **Arabic morphological analyzer for JavaScript / TypeScript** — a pure-JS
 re-implementation of the original Java
 [AlKhalil Morpho Sys 2](https://alkhalil.oujda-nlp-team.net/AlKhalil-MorphoSys.php)
