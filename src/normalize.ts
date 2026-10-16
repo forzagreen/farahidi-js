@@ -63,6 +63,34 @@ export function removeLastDiacritics(word: string): string {
   return word.replace(LAST_DIAC_RE, "");
 }
 
+const TRAILING_DIACRITICS_RE = new RegExp("[" + ALL_DIACRITICS + "]+$");
+
+/**
+ * Drop the inflectional (إعراب) ending of a declinable word.
+ *
+ * Removes the short vowel / tanween carried by the last letter, keeping a shadda
+ * (`عَنْدَلِيبٌ` → `عَنْدَلِيب`, `قَالٌّ` → `قَالّ`, `يَكْتُبْ` → `يَكْتُب`). A tanween fatḥ
+ * written before a final alif / alif maqṣūra becomes a plain fatḥa, since the
+ * letter stays (`كِتَابًا` → `كِتَابَا`, `فَتًى` → `فَتَى`). Letters are never removed,
+ * so `مُسْلِمُونَ` → `مُسْلِمُون`.
+ */
+export function stripCaseEnding(word: string): string {
+  let m = TRAILING_DIACRITICS_RE.exec(word);
+  if (m) {
+    const kept = m[0].includes("ّ") ? "ّ" : "";
+    return word.slice(0, m.index) + kept;
+  }
+  const last = word.slice(-1);
+  if (last === "ا" || last === "ى") {
+    m = TRAILING_DIACRITICS_RE.exec(word.slice(0, -1));
+    if (m && m[0].includes("ً")) {
+      const kept = m[0].includes("ّ") ? "ّ" : "";
+      return word.slice(0, m.index) + kept + "َ" + last;
+    }
+  }
+  return word;
+}
+
 export function replaceAllHamza(word: string): string {
   return word.replace(ALL_HAMZA_RE_G, "");
 }
@@ -248,14 +276,18 @@ function startHamza(word: string): string {
 function endHamza(word: string, pos: number): string {
   if (pos > 1 && word[pos - 1] === "ِ") return "ئ";
   if (pos > 1 && word[pos - 1] === "َ") return "أ";
-  if (pos > 3 && word[pos - 1] === "ُ" && word[pos - 2] === "ّ" && word[pos - 3] === "و") return "ء";
+  if (pos > 3 && word[pos - 1] === "ُ" && word[pos - 2] === "ّ" && word[pos - 3] === "و")
+    return "ء";
   if (pos > 1 && word[pos - 1] === "ُ") return "ؤ";
   return "ء";
 }
 
 function isNibraHamza(word: string, pos: number, length: number): boolean {
   if (pos > 0 && word[pos - 1] === "ِ") return true;
-  if ((pos > 0 && word[pos - 1] === "ي") || (pos > 1 && word[pos - 1] === "ْ" && word[pos - 2] === "ي")) {
+  if (
+    (pos > 0 && word[pos - 1] === "ي") ||
+    (pos > 1 && word[pos - 1] === "ْ" && word[pos - 2] === "ي")
+  ) {
     return true;
   }
   if (
@@ -285,7 +317,12 @@ function isNibraHamza(word: string, pos: number, length: number): boolean {
 }
 
 function isWawHamza(word: string, pos: number, length: number): boolean {
-  if (pos > 0 && (word[pos - 1] === "ا" || word[pos - 1] === "ْ") && word[pos - 1] !== "ي" && word[pos - 1] !== "و") {
+  if (
+    pos > 0 &&
+    (word[pos - 1] === "ا" || word[pos - 1] === "ْ") &&
+    word[pos - 1] !== "ي" &&
+    word[pos - 1] !== "و"
+  ) {
     if (pos + 1 < length && word[pos + 1] === "ُ") {
       return pos + 2 < length;
     }
@@ -322,7 +359,13 @@ function isAlifHamza(word: string, pos: number, length: number): boolean {
   ) {
     return true;
   }
-  if (pos > 1 && word[pos - 1] === "ْ" && word[pos - 2] === "و" && pos + 1 < length && word[pos + 1] === "َ") {
+  if (
+    pos > 1 &&
+    word[pos - 1] === "ْ" &&
+    word[pos - 2] === "و" &&
+    pos + 1 < length &&
+    word[pos + 1] === "َ"
+  ) {
     return false;
   }
   if (pos > 0 && word[pos - 1] === "ْ") {
@@ -374,10 +417,20 @@ export function correctHamza(word: string): string {
         if (i + 2 < length && word[i + 1] === "َ" && word[i + 2] === "ا") {
           out += "آ";
           i += 2;
-        } else if (i + 3 < length && word[i + 1] === "ّ" && word[i + 2] === "َ" && word[i + 3] === "ا") {
+        } else if (
+          i + 3 < length &&
+          word[i + 1] === "ّ" &&
+          word[i + 2] === "َ" &&
+          word[i + 3] === "ا"
+        ) {
           out += "آَّ";
           i += 3;
-        } else if (i + 3 < length && word[i + 1] === "َ" && word[i + 2] === "ء" && word[i + 3] === "ْ") {
+        } else if (
+          i + 3 < length &&
+          word[i + 1] === "َ" &&
+          word[i + 2] === "ء" &&
+          word[i + 3] === "ْ"
+        ) {
           out += "آ";
           i += 3;
         } else {

@@ -127,6 +127,8 @@
       }
       .chip:hover { border-color: var(--accent); }
       .hint { color: var(--muted); font-size: 16px; margin: 10px 2px 0; }
+      .toggle { display: block; cursor: pointer; user-select: none; }
+      .toggle input { accent-color: var(--accent); margin-inline-end: 6px; vertical-align: middle; }
 
       .result { margin-top: 16px; }
       .count { color: var(--muted); font-size: 16px; margin-bottom: 8px; }
@@ -163,7 +165,7 @@
         </div>
         <p class="tag">
           محلِّل صرفي للّغة العربية يعمل بالكامل داخل متصفِّحك — يستخرج الجذر والمدخل المعجمي والوزن
-          والنوع الصرفي والسوابق واللواحق، وهو نسخة من «نظام الخليل الصرفي».
+          والنوع الصرفي وخصائصه والسوابق واللواحق، ويفصل التحليل الصرفي عن الإعراب، وهو نسخة من «نظام الخليل الصرفي».
         </p>
         <p class="links">
           <a href="https://www.npmjs.com/package/farahidi" target="_blank" rel="noopener">npm</a>
@@ -185,7 +187,11 @@
           <button class="go" id="wordBtn">حلِّل</button>
         </div>
         <div class="chips" id="wordChips"></div>
-        <p class="hint">جميع التحليلات الصحيحة، مرتَّبة حسب تكرارها في المدوَّنة (الأكثر تكرارًا أولًا).</p>
+        <p class="hint">
+          جميع التحليلات الصرفية الصحيحة، مرتَّبة حسب تكرارها في المدوَّنة (الأكثر تكرارًا أولًا). يُفصَل
+          الإعراب عن الصرف: الحالات الإعرابية (الرفع والنصب والجر أو الجزم) لا تُكرِّر التحليل، بل تُطوى داخله.
+        </p>
+        <label class="hint toggle"><input type="checkbox" id="inflToggle" /> إظهار الحالات الإعرابية لكل تحليل</label>
         <div class="result" id="wordResult"></div>
       </section>
 

@@ -18,6 +18,7 @@ import {
   layer2DataFiles,
   provideRawText,
   version,
+  type Affix,
   type Analysis,
   type TokenResult,
 } from "../dist/index.js";
@@ -85,7 +86,16 @@ const farahidi = {
 (globalThis as unknown as { farahidi: typeof farahidi }).farahidi = farahidi;
 
 // ------------------------------------------------------------------------ UI
-const WORD_EXAMPLES = ["مدرسة", "كَتَبَ", "لأنهم", "الْكِتَاب", "يكتبون", "قَالَ", "بالمدرسة", "مُسْلِمُونَ"];
+const WORD_EXAMPLES = [
+  "مدرسة",
+  "كَتَبَ",
+  "لأنهم",
+  "الْكِتَاب",
+  "يكتبون",
+  "قَالَ",
+  "بالمدرسة",
+  "مُسْلِمُونَ",
+];
 const SENT_EXAMPLES = ["ذهب الولد إلى المدرسة", "ذَهَبَ الوَلَدُ إلى المَدْرَسَةِ", "العلم نور"];
 
 function el<T extends HTMLElement>(id: string): T {
@@ -96,38 +106,97 @@ function esc(s: string): string {
   return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
 }
 
-// The `priority` field is a 10-decimal string (for parity); show fewer digits.
-function fmtPriority(p: string): string {
-  const n = Number(p);
-  return Number.isNaN(n) ? p : n.toFixed(4);
+function fmtScore(n: number): string {
+  return n.toFixed(4);
 }
 
-function renderAnalyses(host: HTMLElement, word: string, list: Analysis[]): void {
+const DASH = "—";
+
+function fmtAffixes(...groups: Affix[][]): string {
+  const items = groups.flat();
+  if (items.length === 0) return `<span class="dim">${DASH}</span>`;
+  return items
+    .map((x) =>
+      x.description ? `<span title="${esc(x.description)}">${esc(x.form)}</span>` : esc(x.form),
+    )
+    .join(" + ");
+}
+
+/** The part of speech followed by whichever features apply (noun or verb). */
+function fmtFeatures(a: Analysis): string {
+  const feats = [
+    a.type,
+    a.tense,
+    a.number,
+    a.gender,
+    a.person,
+    a.pronoun,
+    a.voice,
+    a.transitivity,
+    a.augmentation,
+    a.emphatic ? "مؤكد" : null,
+  ].filter((f): f is string => Boolean(f));
+  return `<b>${esc(a.pos)}</b>${feats.length ? " · " + feats.map(esc).join(" · ") : ""}`;
+}
+
+/**
+ * One row per morphological reading. With `expand`, one row per إعراب variant
+ * instead (fully vowelled form, case/mood and state), as AlKhalil listed them.
+ */
+function renderAnalyses(host: HTMLElement, word: string, list: Analysis[], expand: boolean): void {
   if (list.length === 0) {
     host.innerHTML = `<p class="empty">لا يوجد تحليل للكلمة «${esc(word)}».</p>`;
     return;
   }
-  const head = ["#", "الكلمة المشكولة", "المدخل", "الجذر", "الوزن", "النوع والخصائص", "الإعراب", "السابقة", "اللاحقة", "الترجيح"];
-  const rows = list
-    .map((a, i) => {
-      const cells = [
-        `<td class="num dim">${i + 1}</td>`,
-        `<td>${esc(a.voweledWord)}</td>`,
-        `<td>${esc(a.lemma)}</td>`,
-        `<td>${esc(a.root)}</td>`,
-        `<td>${esc(a.patternStem)}</td>`,
-        `<td class="pos">${esc(a.partOfSpeech)}</td>`,
-        `<td>${esc(a.caseOrMood)}</td>`,
-        `<td class="dim">${esc(a.proclitic)}</td>`,
-        `<td class="dim">${esc(a.enclitic)}</td>`,
-        `<td class="num dim">${esc(fmtPriority(a.priority))}</td>`,
-      ];
-      return `<tr>${cells.join("")}</tr>`;
-    })
-    .join("");
+  const head = [
+    "#",
+    "الكلمة المشكولة",
+    "المدخل",
+    "الجذر",
+    "الوزن",
+    "النوع والخصائص",
+    "السوابق",
+    "اللواحق",
+    "الإعراب",
+    "الترجيح",
+  ];
+  const rows: string[] = [];
+  let nInfl = 0;
+  list.forEach((a, i) => {
+    const common = [
+      `<td>${esc(a.lemma)}</td>`,
+      `<td>${esc(a.root ?? DASH)}</td>`,
+      `<td>${esc(a.pattern ?? DASH)}</td>`,
+      `<td class="pos">${fmtFeatures(a)}</td>`,
+      `<td class="dim">${fmtAffixes(a.proclitics, a.prefixes)}</td>`,
+      `<td class="dim">${fmtAffixes(a.suffixes, a.enclitics)}</td>`,
+    ].join("");
+    if (expand) {
+      a.inflections.forEach((f, j) => {
+        nInfl++;
+        const ending = [f.case ?? f.mood, f.state].filter(Boolean).join(" · ") || DASH;
+        rows.push(
+          `<tr><td class="num dim">${i + 1}.${j + 1}</td><td>${esc(f.diacritized)}</td>${common}` +
+            `<td>${esc(ending)}</td><td class="num dim">${fmtScore(f.score)}</td></tr>`,
+        );
+      });
+    } else {
+      const endings = [
+        ...new Set(a.inflections.map((f) => f.case ?? f.mood).filter(Boolean)),
+      ] as string[];
+      rows.push(
+        `<tr><td class="num dim">${i + 1}</td><td>${esc(a.diacritized)}</td>${common}` +
+          `<td class="dim">${endings.length ? esc(endings.join(" / ")) : DASH}</td>` +
+          `<td class="num dim">${fmtScore(a.score)}</td></tr>`,
+      );
+    }
+  });
+  const count = expand
+    ? `عدد التحليلات الصرفية: <span class="num">${list.length}</span> — بحالاتها الإعرابية: <span class="num">${nInfl}</span>`
+    : `عدد التحليلات الصرفية: <span class="num">${list.length}</span>`;
   host.innerHTML =
-    `<p class="count">عدد التحليلات: <span class="num">${list.length}</span></p>` +
-    `<div class="tablewrap"><table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    `<p class="count">${count}</p>` +
+    `<div class="tablewrap"><table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
 }
 
 function renderTokens(host: HTMLElement, list: TokenResult[]): void {
@@ -142,7 +211,7 @@ function renderTokens(host: HTMLElement, list: TokenResult[]): void {
         `<td>${esc(r.token)}</td>`,
         `<td>${esc(r.lemma)}</td>`,
         `<td>${esc(r.stem)}</td>`,
-        `<td>${esc(r.root)}</td>`,
+        `<td>${esc(r.root ?? DASH)}</td>`,
       ];
       return `<tr>${cells.join("")}</tr>`;
     })
@@ -209,6 +278,7 @@ function main(): void {
   const wordInput = el<HTMLInputElement>("wordInput");
   const wordBtn = el<HTMLButtonElement>("wordBtn");
   const wordResult = el("wordResult");
+  const inflToggle = el<HTMLInputElement>("inflToggle");
 
   const sentInput = el<HTMLInputElement>("sentInput");
   const sentBtn = el<HTMLButtonElement>("sentBtn");
@@ -219,8 +289,9 @@ function main(): void {
     const word = w.trim();
     if (!word) return;
     wordInput.value = word;
-    renderAnalyses(wordResult, word, analyze(word));
+    renderAnalyses(wordResult, word, analyze(word), inflToggle.checked);
   };
+  inflToggle.addEventListener("change", () => runWord(wordInput.value));
 
   const runSentence = async (s: string): Promise<void> => {
     const text = s.trim();
