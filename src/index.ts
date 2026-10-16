@@ -27,7 +27,7 @@ export type { Affix, Analysis, Inflection, TokenResult } from "./models.js";
 // Advanced: inject pre-decompressed table text on hosts without `node:fs`
 // (e.g. browsers). See the demo for a fetch + DecompressionStream bootstrap.
 export { provideRawText, hasRawText, layer1DataFiles, layer2DataFiles } from "./lexicon.js";
-export const version = "0.2.1";
+export const version = "0.3.0";
 
 let defaultAnalyzer: Analyzer | undefined;
 let defaultDisambiguator: Disambiguator | undefined;
