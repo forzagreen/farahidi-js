@@ -38,7 +38,9 @@ describe("Layer-2 disambiguation parity (per-token lemma/stem/root)", () => {
     const results = DIS.disambiguate(rec.tokens);
     expect(results.map((r) => r.lemma)).toEqual(rec.lemmas);
     expect(results.map((r) => r.stem)).toEqual(rec.stems);
-    expect(results.map((r) => r.root)).toEqual(rec.roots);
+    // The Java reference writes "-" for "no root" and the token itself for
+    // unanalyzable tokens; farahidi uses null for both.
+    expect(results.map((r) => r.root ?? (r.analyzed ? "-" : r.token))).toEqual(rec.roots);
   });
 });
 

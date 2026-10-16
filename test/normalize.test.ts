@@ -15,6 +15,17 @@ describe("normalize", () => {
     expect(N.removeLastDiacritics("أَنّ")).toBe("أَنّ"); // trailing shadda kept
   });
 
+  it("stripCaseEnding", () => {
+    expect(N.stripCaseEnding("عَنْدَلِيبٌ")).toBe("عَنْدَلِيب");
+    expect(N.stripCaseEnding("يَكْتُبْ")).toBe("يَكْتُب");
+    expect(N.stripCaseEnding("قَالّ\u064c")).toBe("قَالّ"); // shadda kept
+    expect(N.stripCaseEnding("مُسْلِمُونَ")).toBe("مُسْلِمُون"); // letters never removed
+    expect(N.stripCaseEnding("كِتَابًا")).toBe("كِتَابَا"); // tanween fatḥ + alif → fatḥa
+    expect(N.stripCaseEnding("فَتًى")).toBe("فَتَى");
+    expect(N.stripCaseEnding("يَكْتُبُوا")).toBe("يَكْتُبُوا"); // nothing to strip
+    expect(N.stripCaseEnding("")).toBe("");
+  });
+
   it("normalizeHamza folds carriers", () => {
     expect(N.normalizeHamza("سأل")).toBe("سءل");
     expect(N.normalizeHamza("مؤمن")).toBe("مءمن");

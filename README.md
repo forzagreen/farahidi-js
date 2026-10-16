@@ -12,8 +12,10 @@ re-implementation of the original Java
 [`farahidi`](https://github.com/forzagreen/farahidi) library.
 
 Given an Arabic word, `farahidi` returns every valid morphological analysis —
-**root, lemma, stem, pattern (wazn), part of speech with full features, case/mood,
-and segmented proclitics/enclitics** — ranked by corpus frequency.
+**root, lemma, stem, pattern (wazn), part of speech with structured features, and
+segmented clitics/affixes** — ranked by corpus frequency. The syntactic
+case/mood endings (الإعراب) are kept apart from the morphology: each analysis
+nests its possible *inflections* instead of being repeated once per ending.
 
 - **Pure JS, zero runtime dependencies.** ESM + CommonJS, typed. Node 18–24.
 - **Offline.** The full lexicon plus the in-context language model ship
@@ -30,7 +32,8 @@ and segmented proclitics/enclitics** — ranked by corpus frequency.
 
 **[forzagreen.github.io/farahidi-js](https://forzagreen.github.io/farahidi-js/)** — the
 whole analyzer (engine + lexicon) runs in your browser; no server, nothing sent anywhere.
-Type any Arabic word to see every analysis, or a sentence for in-context disambiguation.
+Type any Arabic word to see every morphological analysis (with a toggle to expand the
+إعراب variants), or a sentence for in-context disambiguation.
 
 ## Install
 
@@ -43,9 +46,12 @@ npm install farahidi
 ```ts
 import { analyze } from "farahidi";
 
-for (const a of analyze("لِأَنَّهُمْ")) {
-  console.log(a.voweledWord, a.lemma, a.root, a.partOfSpeech);
+for (const a of analyze("بالمدرسة")) {
+  console.log(a.diacritized, a.lemma, a.root, a.pos, a.type, a.proclitics);
 }
+// بِالْمِدْرَسَة مِدْرَس درس اسم اسم آلة [ { form: 'بِال', description: 'حرف الجر+ال:التعريف' } ]
+// بِالْمُدَرَّسَة مُدَرَّس درس اسم اسم مفعول [ { form: 'بِال', description: 'حرف الجر+ال:التعريف' } ]
+// ...
 ```
 
 CommonJS works too:
@@ -54,25 +60,50 @@ CommonJS works too:
 const { analyze } = require("farahidi");
 ```
 
-`analyze()` returns an array of `Analysis` objects, sorted by `priority`
-(most frequent analysis first). Each `Analysis` has these fields (Arabic script;
-`"-"` = not applicable, `"#"` = absent clitic):
+`analyze()` returns an array of `Analysis` objects — one per **morphological
+reading** of the word, sorted by `score` (most frequent first). All labels are
+Arabic strings as found in the AlKhalil lexicon; `null` means "not applicable"
+(a particle has no root, a noun has no mood, …).
 
 | field | meaning |
 |---|---|
-| `voweledWord` | fully diacritized surface form |
-| `proclitic` / `enclitic` | segmented clitics with their descriptions |
-| `stem` | the bare stem |
-| `lemma` | dictionary form |
-| `root` | the (3- or 4-letter) root |
-| `patternStem` / `patternLemma` | canonical patterns (wazn) |
-| `diacPatternStem` | diacritic pattern of the stem |
-| `partOfSpeech` | pipe-joined POS + morpho-syntactic features |
-| `caseOrMood` | إعراب (case for nouns, mood for verbs) |
-| `priority` | out-of-context ranking weight (higher = more frequent) |
+| `diacritized` | the word with its diacritics, *without* the case/mood ending (`عَنْدَلِيب`, `يَكْتُب`) |
+| `lemma` / `root` / `stem` | dictionary form, 3- or 4-letter root, clitic-free stem |
+| `pattern` / `lemmaPattern` | canonical patterns (wazn) of the stem and the lemma |
+| `pos` / `type` | part of speech (`اسم` / `فعل` / `حرف`) and sub-type (`اسم فاعل`, `مصدر أصلي`, `جر`, `اسم علم` …) |
+| `gender` / `number` | noun features (`مذكر` / `مؤنث`, `مفرد` / `مثنى` / `جمع`) |
+| `tense` / `voice` / `person` / `pronoun` / `transitivity` / `augmentation` / `emphatic` | verb features (`ماض` / `مضارع` / `أمر`, `معلوم` / `مجهول`, `غائب` …, the subject pronoun `هو` / `أنتَ` / …, `لازم` / `متعد`, `مجرد` / `مزيد`, نون التوكيد) |
+| `proclitics` / `prefixes` / `suffixes` / `enclitics` | segmentation around the stem as `Affix { form, description }` arrays: clitics (`وَ`, `بِ`, `ال`, attached pronouns) and inflectional affixes (the مضارع prefix, `ة`, `ان`, `وا` …) |
+| `score` | out-of-context ranking weight, higher = more frequent |
+| `inflections` | the إعراب variants of this reading (below) |
 
-For repeated analysis, build one reusable analyzer (the lexicon loads lazily and
-is shared across instances):
+### Morphology vs. syntax (الإعراب)
+
+The case ending of a noun and the mood ending of a verb depend on the word's role
+in a sentence, not on its morphology, so they do not multiply the results. A bare
+`عندليب` is **one** analysis; its five possible endings are nested as
+`Inflection` objects, best first:
+
+```ts
+const [a] = analyze("عندليب");
+console.log(a.diacritized, a.pos, a.type, a.root); // عَنْدَلِيب اسم اسم جامد عندل
+for (const i of a.inflections) console.log(i.diacritized, i.case, i.state);
+// عَنْدَلِيبٌ مرفوع نكرة
+// عَنْدَلِيبٍ مجرور نكرة
+// عَنْدَلِيبَ منصوب مضاف
+// عَنْدَلِيبُ مرفوع مضاف
+// عَنْدَلِيبِ مجرور مضاف
+```
+
+Each `Inflection` carries the fully vowelled `diacritized` form, `case` (nouns:
+`مرفوع` / `منصوب` / `مجرور`) or `mood` (verbs: `مرفوع` / `منصوب` / `مجزوم`), the
+noun's definiteness `state` (`نكرة` / `معرف بأل` / `مضاف` …) and its own `score`.
+Indeclinable words (particles, past and imperative verbs) have exactly one
+inflection with `case`/`mood` `null`. To get the old one-row-per-ending view,
+flatten: `analyses.flatMap((a) => a.inflections.map((i) => ({ ...a, ...i })))`.
+
+Results are plain JSON data. For repeated analysis, build one reusable analyzer
+(the lexicon loads lazily and is shared across instances):
 
 ```ts
 import { Analyzer } from "farahidi";
@@ -99,13 +130,18 @@ for (const r of analyzeText("ذهب الولد إلى المدرسة")) {
 ```
 
 A reusable `Disambiguator` is also exposed; `disambiguate(tokens)` takes a
-pre-tokenized list. `TokenResult.analyzed` is `false` for tokens the analyzer
-could not analyze (lemma/stem/root then fall back to the token).
+pre-tokenized list and `tokenize(text)` exposes the sentence/word splitter.
+`TokenResult.root` is `null` when the chosen reading has no root (particles).
+`TokenResult.analyzed` is `false` for tokens the analyzer could not analyze
+(lemma/stem then fall back to the token, root is `null`).
 
 ## Scope
 
 - **Layer 1** — out-of-context analysis of a single word (`analyze` /
-  `Analyzer`), returning all candidates ranked by frequency.
+  `Analyzer`), returning all morphological readings ranked by frequency, each
+  with its possible إعراب endings nested as inflections. The underlying engine
+  is the full AlKhalil pipeline; its raw one-record-per-ending output is what
+  the golden parity suite compares to the Java reference.
 - **Layer 2** — in-context disambiguation (`analyzeText` / `Disambiguator`), a
   faithful port of AlKhalil's shipped `ADATAnalyzer` (lemmatizer + light/heavy
   stemmer). The chosen lemma is exact; the stem/root are then selected by corpus

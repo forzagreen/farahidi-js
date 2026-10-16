@@ -74,7 +74,7 @@ export class Disambiguator {
   private lemmas(token: string): [string[], boolean] {
     const cached = this.morphCache.get(token);
     if (cached !== undefined) return cached;
-    const analyses = this.analyzer.processToken(token);
+    const analyses = this.analyzer._processToken(token);
     let res: [string[], boolean];
     if (analyses.length === 0) {
       res = [[token], false];
@@ -244,7 +244,7 @@ export class Disambiguator {
     if (!analyzed) return token;
     let best: string | null = null;
     let bestVal = 0;
-    for (const a of this.analyzer.processToken(token)) {
+    for (const a of this.analyzer._processToken(token)) {
       if (a.lemma === lemma) {
         const value = a[attr];
         const val = freqMap.get(value) ?? 0;
@@ -273,7 +273,9 @@ export class Disambiguator {
         token,
         lemma: analyzed ? lemma : token,
         stem,
-        root,
+        // AlKhalil's "-" (no root) and its unanalyzable fallback (the token
+        // itself) both mean "no root known".
+        root: analyzed && root !== "-" ? root : null,
         analyzed,
       });
     }
