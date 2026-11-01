@@ -36,6 +36,8 @@
         }
       })();
     </script>
+    <!-- «أدوات الحوسبة»: the ecosystem menu; the same file every sister site carries (canonical copy in the wikitermbase repo). -->
+    <script defer src="ecosystem-switcher.js"></script>
     <style>
       [data-theme="light"] {
         --bg: #f6f7f9;
@@ -77,7 +79,8 @@
       .num { direction: ltr; unicode-bidi: isolate; }
 
       header { padding: 36px 0 8px; }
-      .headtop { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+      .headtop { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+      .headtop ecosystem-switcher { margin-inline-start: auto; }
       h1 { margin: 0; font-size: 38px; font-weight: 700; }
       h1 .en { color: var(--accent-2); font-size: 26px; }
       .tag { color: var(--muted); margin: 0 0 12px; font-size: 18px; max-width: 70ch; }
@@ -151,6 +154,7 @@
       <header>
         <div class="headtop">
           <h1>الفراهيدي <span class="en">farahidi</span></h1>
+          <ecosystem-switcher current="farahidi"></ecosystem-switcher>
           <div class="theme" id="theme" role="group" aria-label="نمط العرض">
             <button data-mode="auto" title="تلقائي" aria-label="تلقائي">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>

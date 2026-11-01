@@ -53,6 +53,7 @@ await build({
 });
 
 copyFileSync(resolve(root, "demo/index.html"), resolve(site, "index.html"));
+copyFileSync(resolve(root, "demo/ecosystem-switcher.js"), resolve(site, "ecosystem-switcher.js"));
 writeFileSync(resolve(site, ".nojekyll"), ""); // serve files verbatim on Pages
 
 const dataSrc = resolve(root, "src/data");
